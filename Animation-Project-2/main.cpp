@@ -130,17 +130,17 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     {
         theEditMode = MOVING_LIGHT;
     }
+    if (key == GLFW_KEY_F && action == GLFW_PRESS) 
+    {
+        theEditMode = TAKE_CONTROL;
+    }
     // Wireframe
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
         for (int i = 0; i < meshArray.size(); i++) {
-            meshArray[i]->isWireframe = true;
+            meshArray[i]->isWireframe = !meshArray[i]->isWireframe;
         }
     }
-    if (key == GLFW_KEY_X && action == GLFW_RELEASE) {
-        for (int i = 0; i < meshArray.size(); i++) {
-            meshArray[i]->isWireframe = false;
-        }
-    }
+    
     if (key == GLFW_KEY_LEFT_ALT && action == GLFW_PRESS) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
@@ -266,6 +266,40 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
             {
                 ambientLight *= 1.e-1;
                 LightMan->SetAmbientLightAmount(ambientLight);
+            }
+        }
+        case TAKE_CONTROL:
+        {
+            constexpr float PLAYER_MOVE_SPEED = 5.f;
+            glm::vec3 strafeDirection = glm::cross(camera->target, upVector);
+            player_mesh->velocity.y = 0.f;
+
+            if (action == GLFW_PRESS) {
+                if (key == GLFW_KEY_W) {
+                    player_mesh->velocity.z = PLAYER_MOVE_SPEED;
+                    player_mesh->rotation = glm::quat(glm::vec3(0.0f, glm::radians(180.0f), 0.0f));
+                }
+                if (key == GLFW_KEY_S) {
+                    player_mesh->velocity.z = -PLAYER_MOVE_SPEED;
+                    player_mesh->rotation = glm::quat(glm::vec3(0.0f, glm::radians(0.0f), 0.0f));
+                }
+                if (key == GLFW_KEY_A) {
+                    player_mesh->velocity.x = PLAYER_MOVE_SPEED;
+                    player_mesh->rotation = glm::quat(glm::vec3(0.0f, glm::radians(-90.0f), 0.0f));
+                }
+                if (key == GLFW_KEY_D) {
+                    player_mesh->velocity.x = -PLAYER_MOVE_SPEED;
+                    player_mesh->rotation = glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f));
+                }
+                if (key == GLFW_KEY_Q) {
+                    player_mesh->velocity.y = PLAYER_MOVE_SPEED;
+                }
+                if (key == GLFW_KEY_E) {
+                    player_mesh->velocity.y = -PLAYER_MOVE_SPEED;
+                }
+            }
+            else if (action == GLFW_RELEASE) {
+                player_mesh->KillAllForces();
             }
         }
         break;
@@ -508,12 +542,15 @@ void Render() {
     meshArray.push_back(flat_plain);
 
     player_mesh = new cMeshInfo();
-    player_mesh->meshName = "pyramid";
+    player_mesh->meshName = "steve";
     player_mesh->friendlyName = "player";
-    player_mesh->doNotLight = false;
+    player_mesh->doNotLight = true;
     player_mesh->isVisible = true;
-    player_mesh->useRGBAColour = true;
+    player_mesh->useRGBAColour = false;
     player_mesh->RGBAColour = glm::vec4(50, 30, 0, 1);
+    player_mesh->hasTexture = true;
+    player_mesh->textures[0] = "man.bmp";
+    player_mesh->textureRatios[0] = 1.f;
     meshArray.push_back(player_mesh);
 
     // Utility
@@ -771,6 +808,15 @@ void LoadTextures() {
         std::cout << "\nError: failed to load skybox because " << errorString;
     }
     
+    if (TextureMan->Create2DTextureFromBMPFile("man.bmp"))
+    {
+        std::cout << "Loaded man texture." << std::endl;
+    }
+    else
+    {
+        std::cout << "Error: failed to load man texture.";
+    }
+    
     if (TextureMan->Create2DTextureFromBMPFile("crosshair.bmp"))
     {
         std::cout << "Loaded crosshair texture." << std::endl;
@@ -889,6 +935,12 @@ void LoadPlyFilesIntoVAO(void)
     sModelDrawInfo pyramid;
     plyLoader->LoadModel(meshFiles[11], pyramid);
     if (!VAOMan->LoadModelIntoVAO("pyramid", pyramid, shaderID)) {
+        std::cerr << "Could not load model into VAO" << std::endl;
+    }
+
+    sModelDrawInfo steve;
+    plyLoader->LoadModel(meshFiles[8], steve);
+    if (!VAOMan->LoadModelIntoVAO("steve", steve, shaderID)) {
         std::cerr << "Could not load model into VAO" << std::endl;
     }
     

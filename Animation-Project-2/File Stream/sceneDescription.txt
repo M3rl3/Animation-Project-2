@@ -15,7 +15,7 @@ position 0.0 0.0 0.0
 rotation 0.0 0.0 0.0
 scale 1.0 1.0 1.0
 
-player
-position -180.0 12.0 -150.0
-rotation 67.55 0.0 0.0
-scale 20.0 20.0 20.0
+player_mesh
+position -85.0 12.0 -320.0
+rotation 0.0 0.0 0.0
+scale 1.0 1.0 1.0
