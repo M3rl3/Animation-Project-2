@@ -185,13 +185,13 @@ bool cVAOManager::LoadModelIntoVAO(
 	glVertexAttribPointer(vBoneIDLocation, 4,				// vBoneID
 							GL_FLOAT, GL_FALSE,
 							sizeof(vertLayout),						// Stride	(number of bytes)
-							(void*)offsetof(vertLayout, vBoneID[0]));
+							(void*)offsetof(vertLayout, BoneID[0]));
 
 	glEnableVertexAttribArray(vBoneWeightLocation);		// vBiNormal
 	glVertexAttribPointer(vBoneWeightLocation, 4,				// vBiNormal
 							GL_FLOAT, GL_FALSE,
 							sizeof(vertLayout),						// Stride	(number of bytes)
-							(void*)offsetof(vertLayout, vBoneWeight[0]));
+							(void*)offsetof(vertLayout, BoneWeight[0]));
 
 	// Now that all the parts are set up, set the VAO to zero
 	glBindVertexArray(0);

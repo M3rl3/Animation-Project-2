@@ -68,10 +68,9 @@ public:
 	bool HasParent;
 	bool HasBones;
 
-	// Character Animation || Ragdoll 
-	std::vector<glm::mat4> BoneModelMatrices;
-	std::vector<glm::mat4> GlobalTransformations;
-	glm::mat4 BoneRotationMatrices[66];
+	// Bone transformations
+	glm::mat4 BoneModelMatrices[4];
+	glm::mat4 BoneRotationMatrices[4];
 
 	std::string message;
 

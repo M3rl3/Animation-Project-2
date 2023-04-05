@@ -18,7 +18,7 @@ public:
 
 	sModelDrawInfo* GetPlyModelByID(unsigned int id);
 
-	int LoadModel(std::string fileName, sModelDrawInfo& plyModel);
+	int LoadModel(std::string fileName, sModelDrawInfo& plyModel, bool withBones = false);
 
 private:
 	std::vector<sModelDrawInfo*> plyModels;

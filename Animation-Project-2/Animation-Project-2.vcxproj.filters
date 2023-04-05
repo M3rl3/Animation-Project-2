@@ -16,6 +16,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{f0da431e-ecd4-4f10-b238-e06aacadc98f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="cAnimationManager">
+      <UniqueIdentifier>{26e4a46d-389a-4789-bc2b-38798ccbbe4e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AI_Path_Finding\PathFinding.h">
@@ -155,13 +158,7 @@
     <Text Include="File Stream\sceneDescription.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\assets\shaders\fragmentShader_bones.glsl">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="..\assets\shaders\geometryShader_passthrough.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="..\assets\shaders\vertexShader_bones.glsl">
       <Filter>Shaders</Filter>
     </None>
     <None Include="..\assets\shaders\fragmentShader.glsl">

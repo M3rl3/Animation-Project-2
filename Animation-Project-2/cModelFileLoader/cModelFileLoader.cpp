@@ -30,7 +30,7 @@ sModelDrawInfo* cModelFileLoader::GetPlyModelByID(unsigned int id) {
     return plyModels[id];
 }
 
-int cModelFileLoader::LoadModel(std::string fileName, sModelDrawInfo& plyModel) {
+int cModelFileLoader::LoadModel(std::string fileName, sModelDrawInfo& plyModel, bool withBones) {
 
     vertexLayout* modelArray = NULL;
     triangleLayout* triangleArray = NULL;
@@ -130,6 +130,35 @@ int cModelFileLoader::LoadModel(std::string fileName, sModelDrawInfo& plyModel) 
 
         plyModel.pVertices[index].u0 = modelArray[index].texture_u;
         plyModel.pVertices[index].v0 = modelArray[index].texture_v;
+
+        if (withBones) {
+
+            if (plyModel.pVertices[index].x > 1.8f) {
+                plyModel.pVertices[index].BoneID[0] = 3;
+                plyModel.pVertices[index].BoneWeight[0] = 3;
+            }
+            else if (plyModel.pVertices[index].x > 1.2f) {
+                plyModel.pVertices[index].BoneID[0] = 2;
+                plyModel.pVertices[index].BoneWeight[0] = 2;
+
+            }
+            else if (plyModel.pVertices[index].x > 0.6f) {
+                plyModel.pVertices[index].BoneID[0] = 1;
+                plyModel.pVertices[index].BoneWeight[0] = 1;
+            }
+            else {
+                plyModel.pVertices[index].BoneID[0] = 0;
+                plyModel.pVertices[index].BoneWeight[0] = 0;
+            }
+
+            plyModel.pVertices[index].BoneID[1] = 0.f;
+            plyModel.pVertices[index].BoneID[2] = 0.f;
+            plyModel.pVertices[index].BoneID[3] = 0.f;
+            
+            plyModel.pVertices[index].BoneWeight[1] = 0.f;
+            plyModel.pVertices[index].BoneWeight[2] = 0.f;
+            plyModel.pVertices[index].BoneWeight[3] = 0.f;
+        }
     }
 
     plyModel.numberOfIndices = plyModel.numberOfTriangles * 3;

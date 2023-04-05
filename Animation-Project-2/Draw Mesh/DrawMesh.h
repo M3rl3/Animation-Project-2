@@ -18,16 +18,9 @@ void DrawMesh(cMeshInfo* currentMesh,
     cVAOManager* VAOManager,
     sCamera* camera,
     GLint modelULoc,
-    GLint modelInverseULoc);
-
-void DrawMesh(cMeshInfo* currentMesh,
-    glm::mat4 model,
-    GLuint shaderID,
-    GLuint textureID,
-    cBasicTextureManager* TextureManager,
-    cVAOManager* VAOManager,
-    sCamera* camera,
-    GLint modelULoc,
-    GLint modelInverseULoc);
+    GLint modelInverseULoc,
+    GLuint BoneMatricesLocation[4],
+    GLuint BoneRotationMatricesLocation[4]
+);
 
 void ReadSceneDescription(std::vector<cMeshInfo*>& meshArray);

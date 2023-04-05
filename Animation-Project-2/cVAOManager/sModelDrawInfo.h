@@ -13,8 +13,8 @@ struct vertLayout
 	float u0, v0, u1, v1;
 	float tx, ty, tz, tw;
 	float bx, by, bz, bw;
-	float vBoneID[4];
-	float vBoneWeight[4];
+	float BoneID[4];
+	float BoneWeight[4];
 };
 
 struct sModelDrawInfo

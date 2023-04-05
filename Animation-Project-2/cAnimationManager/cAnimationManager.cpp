@@ -97,7 +97,7 @@ void cAnimationManager::Update(const std::vector<cMeshInfo*>& meshObjects, float
 				mesh->AdjustRoationAngleFromEuler(vec_tempRot);
 
 				mesh->message = GetAnimationNullFrame(itFind->second, animation.AnimationTime);
-				std::cout << mesh->message;
+				// std::cout << mesh->message;
 
 				mesh->currentEasing = GetAnimationEasing(itFind->second, animation.AnimationTime, 0);
 				mesh->currentEasing1 = GetAnimationEasing(itFind->second, animation.AnimationTime, 1);

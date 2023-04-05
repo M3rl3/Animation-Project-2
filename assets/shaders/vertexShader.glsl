@@ -27,12 +27,24 @@ uniform mat4 ModelInverse;
 uniform mat4 View;
 uniform mat4 Projection;
 
+uniform bool hasBones;
+
+// BoneMatrix is Transforms, Rotations, and Scale
+uniform mat4 BoneMatrices[4];
+
+// Only include Rotations, for updating the normals
+uniform mat4 BoneRotationMatrices[4];
+
 void main()
 {
 	vec3 vertPosition = vPosition.xyz;
 
 	mat4 MVP = Projection * View * Model;
 	
+	if (hasBones) {
+		gl_Position = MVP * BoneMatrices[ int(vBoneID[0]) ] * vPosition;
+	}
+
 	gl_Position = MVP * vec4(vertPosition, 1.f);
 
 	gWorldLocation.xyz = (Model * vec4(vertPosition, 1.f)).xyz;

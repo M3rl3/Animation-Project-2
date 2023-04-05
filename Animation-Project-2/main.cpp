@@ -15,6 +15,7 @@
 #include "cVAOManager/cVAOManager.h"
 #include "cLightManager/cLightManager.h"
 #include "cBasicTextureManager/cBasicTextureManager.h"
+#include "cAnimationManager/cAnimationManager.h"
 #include "cFBO/cFBO.h"
 
 #include <iostream>
@@ -36,12 +37,13 @@ cBasicTextureManager* TextureMan;
 cLightManager* LightMan;
 cFBO* FrameBuffer;
 
+cAnimationManager AnimeMan;
+
 sModelDrawInfo player_obj;
 
 cMeshInfo* full_screen_quad;
 cMeshInfo* skybox_sphere_mesh;
 cMeshInfo* player_mesh;
-cMeshInfo* boner_mesh;
 
 cMeshInfo* bulb_mesh;
 cLight* pointLight;
@@ -56,6 +58,9 @@ bool useFBO = false;
 bool mouseClick = false;
 bool fullScreen = false;
 
+float collectiveSpeed = 1.f;
+float temp = 0.f;
+
 std::vector <std::string> meshFiles;
 std::vector <cMeshInfo*> meshArray;
 
@@ -66,16 +71,28 @@ float RandomFloat(float a, float b);
 void LoadPlyFilesIntoVAO(void);
 void RenderToFBO(GLFWwindow* window, sCamera* camera, GLuint eyeLocationLocation, 
                  GLuint viewLocation, GLuint projectionLocation,
-                 GLuint modelLocaction, GLuint modelInverseLocation);
+                 GLuint modelLocaction, GLuint modelInverseLocation,
+                 GLuint BoneMatricesLocation[4], GLuint BoneRotationMatricesLocation[4]);
 glm::mat4 CreateModelMatrix(const glm::mat4& parentModelMatrix,
     const glm::vec3& translate, const glm::quat& rotate);
+
+void LoadAnimations();
 
 const glm::vec3 origin = glm::vec3(0);
 const glm::mat4 matIdentity = glm::mat4(1.0f);
 const glm::vec3 upVector = glm::vec3(0.f, 1.f, 0.f);
 
+glm::vec3 m_Bone1Position;
+glm::vec3 m_Bone2Position;
+glm::vec3 m_Bone3Position;
+glm::quat m_Bone1Rotation;
+glm::quat m_Bone2Rotation;
+glm::quat m_Bone3Rotation;
+
 // attenuation on all lights
 glm::vec4 constLightAtten = glm::vec4(1.0f);
+
+double g_prevTime, g_currentTime, g_elapsedTime;
 
 enum eEditMode
 {
@@ -130,7 +147,7 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     {
         theEditMode = MOVING_SELECTED_OBJECT;
     }
-    if (key == GLFW_KEY_L && action == GLFW_PRESS) 
+    if (key == GLFW_KEY_M && action == GLFW_PRESS) 
     {
         theEditMode = MOVING_LIGHT;
     }
@@ -138,6 +155,33 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     {
         theEditMode = TAKE_CONTROL;
     }
+
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
+        collectiveSpeed = 1.f;
+    }
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
+        collectiveSpeed = 2.f;
+    }
+    if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
+        collectiveSpeed = 3.f;
+    }
+    if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
+        collectiveSpeed = 4.f;
+    }
+    if (key == GLFW_KEY_5 && action == GLFW_PRESS) {
+        collectiveSpeed = 5.f;
+    }
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+        temp = collectiveSpeed;
+        collectiveSpeed = 0.f;
+    }
+    if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE) {
+        collectiveSpeed = temp;
+    }
+    if (key == GLFW_KEY_GRAVE_ACCENT && action == GLFW_RELEASE) {
+        collectiveSpeed *= -1.f;
+    }
+
     // Wireframe
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
         for (int i = 0; i < meshArray.size(); i++) {
@@ -484,6 +528,9 @@ void Render() {
     // Load asset paths from external file
     ReadFromFile("./File Stream/readFile.txt");
 
+    // Load animations
+    LoadAnimations();
+
     // Load the ply model
     modelLoader = new cModelFileLoader();
 
@@ -550,11 +597,22 @@ void Render() {
     player_mesh->friendlyName = "player";
     player_mesh->doNotLight = true;
     player_mesh->isVisible = true;
-    player_mesh->useRGBAColour = false;
+    player_mesh->useRGBAColour = true;
     player_mesh->RGBAColour = glm::vec4(50, 30, 0, 1);
-    player_mesh->hasTexture = true;
+    player_mesh->hasTexture = false;
     player_mesh->textures[0] = "man.bmp";
     player_mesh->textureRatios[0] = 1.f;
+
+    player_mesh->animation.AnimationTime = 5.f;
+    player_mesh->animation.IsLooping = true;
+    player_mesh->animation.IsPlaying = true;
+    player_mesh->isAnimated = true;
+    player_mesh->animation.AnimationType = "Animation0";
+    player_mesh->animation.Speed = collectiveSpeed;
+
+    player_mesh->HasBones = true;
+    player_mesh->BoneModelMatrices[0] = glm::mat4(1.f);	// identity matrix
+
     meshArray.push_back(player_mesh);
 
     // Utility
@@ -575,7 +633,7 @@ void Render() {
     ReadSceneDescription(meshArray);
 }
 
-void Update() {
+void Update(float dt) {
 
     // Cull back facing triangles
     glCullFace(GL_BACK);
@@ -588,10 +646,22 @@ void Update() {
     // MVP
     glm::mat4x4 model;
 
-    GLint modelLocaction = glGetUniformLocation(shaderID, "Model");
-    GLint viewLocation = glGetUniformLocation(shaderID, "View");
-    GLint projectionLocation = glGetUniformLocation(shaderID, "Projection");
-    GLint modelInverseLocation = glGetUniformLocation(shaderID, "ModelInverse");
+    GLuint modelLocaction = glGetUniformLocation(shaderID, "Model");
+    GLuint viewLocation = glGetUniformLocation(shaderID, "View");
+    GLuint projectionLocation = glGetUniformLocation(shaderID, "Projection");
+    GLuint modelInverseLocation = glGetUniformLocation(shaderID, "ModelInverse");
+
+    GLuint BoneMatricesLocation[4];
+    BoneMatricesLocation[0] = glGetUniformLocation(shaderID, "BoneMatrices[0]");
+    BoneMatricesLocation[1] = glGetUniformLocation(shaderID, "BoneMatrices[1]");
+    BoneMatricesLocation[2] = glGetUniformLocation(shaderID, "BoneMatrices[2]");
+    BoneMatricesLocation[3] = glGetUniformLocation(shaderID, "BoneMatrices[3]");
+    
+    GLuint BoneRotationMatricesLocation[4];
+    BoneRotationMatricesLocation[0] = glGetUniformLocation(shaderID, "BoneRotationMatrices[0]");
+    BoneRotationMatricesLocation[1] = glGetUniformLocation(shaderID, "BoneRotationMatrices[1]");
+    BoneRotationMatricesLocation[2] = glGetUniformLocation(shaderID, "BoneRotationMatrices[2]");
+    BoneRotationMatricesLocation[3] = glGetUniformLocation(shaderID, "BoneRotationMatrices[3]");
     
     // Lighting
     // ManageLights();
@@ -632,6 +702,10 @@ void Update() {
     glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(camera->view));
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(camera->projection));
 
+    g_prevTime = g_currentTime;
+    g_currentTime = glfwGetTime();
+    g_elapsedTime = g_currentTime - g_prevTime;
+
     if (theEditMode == TAKE_CONTROL) {
         camera->position = player_mesh->position - glm::vec3(0.f, -10.f, 100.f);
         // bulb_mesh->position = player_mesh->position - glm::vec3(0.f, -100.f, 75.f);
@@ -642,32 +716,64 @@ void Update() {
         }
     }
 
+    player_mesh->BoneModelMatrices[0] = glm::translate(glm::mat4(1.0f), m_Bone1Position);
+    player_mesh->BoneModelMatrices[1] = glm::translate(player_mesh->BoneModelMatrices[0], m_Bone2Position);
+    player_mesh->BoneModelMatrices[2] = glm::translate(player_mesh->BoneModelMatrices[1], glm::vec3(0.f));
+    player_mesh->BoneModelMatrices[3] = glm::translate(player_mesh->BoneModelMatrices[2], glm::vec3(0.f));
+
     // Draw scene meshes
     for (int i = 0; i < meshArray.size(); i++) {
 
         cMeshInfo* currentMesh = meshArray[i];
 
+        if (currentMesh->isAnimated)
+        {
+            currentMesh->animation.Speed = collectiveSpeed;
+
+            // picks up the easing based on the position
+            if (currentMesh->animation.AnimationType == "Animation0") {
+                switch (currentMesh->currentEasing)
+                {
+                case EaseIn:
+                    currentMesh->RGBAColour = glm::vec4(100.f, 0.f, 0.f, 1.f);
+                    break;
+                case EaseOut:
+                    currentMesh->RGBAColour = glm::vec4(100.f, 100.f, 0.f, 1.f);
+                    break;
+                case EaseInOut:
+                    currentMesh->RGBAColour = glm::vec4(0.f, 100.f, 0.f, 1.f);
+                    break;
+                default:
+                    currentMesh->RGBAColour = glm::vec4(100.f, 100.f, 100.f, 1.f);
+                    break;
+                }
+            }
+        }
+
         // Draw all the meshes pushed onto the vector
-        DrawMesh(currentMesh,           // theMesh
-                 model,                 // Model Matrix
-                 shaderID,              // Compiled Shader ID
-                 TextureMan,            // Instance of the Texture Manager
-                 VAOMan,                // Instance of the VAO Manager
-                 camera,                // Instance of the struct Camera
-                 modelLocaction,        // UL for model matrix
-                 modelInverseLocation); // UL for transpose of model matrix
+        DrawMesh(currentMesh,                   // theMesh
+                 model,                         // Model Matrix
+                 shaderID,                      // Compiled Shader ID
+                 TextureMan,                    // Instance of the Texture Manager
+                 VAOMan,                        // Instance of the VAO Manager
+                 camera,                        // Instance of the struct Camera
+                 modelLocaction,                // UL for model matrix
+                 modelInverseLocation,          // UL for transpose of model matrix
+                 BoneMatricesLocation,          // UL for bone matrices
+                 BoneRotationMatricesLocation); // UL for bone rotation matrices
     }
 
     // Draw the skybox
     DrawMesh(skybox_sphere_mesh, matIdentity, shaderID, 
-        TextureMan, VAOMan, camera, modelLocaction, modelInverseLocation);
+        TextureMan, VAOMan, camera, modelLocaction, modelInverseLocation,
+        BoneMatricesLocation, BoneRotationMatricesLocation);
 
     // Redirect output to an offscreen quad
     if (useFBO)
     {
         RenderToFBO(window, camera, eyeLocationLocation, 
             viewLocation, projectionLocation,
-            modelLocaction, modelInverseLocation);
+            modelLocaction, modelInverseLocation, BoneMatricesLocation, BoneRotationMatricesLocation);
     }
 
     glfwSwapBuffers(window);
@@ -714,6 +820,8 @@ void Update() {
         beginTime = currentTime;
         frameCount = 0;
     }
+
+    AnimeMan.Update(meshArray, 0.1f);
 }
 
 void Shutdown() {
@@ -827,7 +935,8 @@ float RandomFloat(float a, float b) {
 
 void RenderToFBO(GLFWwindow* window, sCamera* camera,
                  GLuint eyeLocationLocation, GLuint viewLocation, GLuint projectionLocation,
-                 GLuint modelLocaction, GLuint modelInverseLocation)
+                 GLuint modelLocaction, GLuint modelInverseLocation, 
+                 GLuint BoneMatricesLocation[4], GLuint BoneRotationMatricesLocation[4])
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -894,7 +1003,9 @@ void RenderToFBO(GLFWwindow* window, sCamera* camera,
         VAOMan,
         camera,
         modelLocaction,
-        modelInverseLocation);
+        modelInverseLocation,
+        BoneMatricesLocation,
+        BoneRotationMatricesLocation);
 
     camera->position = exCameraEye;
     camera->target = exCameraLookAt;
@@ -929,7 +1040,7 @@ void LoadPlyFilesIntoVAO(void)
     }
 
     sModelDrawInfo steve;
-    modelLoader->LoadModel(meshFiles[8], steve);
+    modelLoader->LoadModel(meshFiles[8], steve, true);
     if (!VAOMan->LoadModelIntoVAO("steve", steve, shaderID)) {
         std::cerr << "Could not load model into VAO" << std::endl;
     }
@@ -956,13 +1067,72 @@ glm::mat4 CreateModelMatrix(const glm::mat4& parentModelMatrix, const glm::vec3&
     return parentModelMatrix * TranslationMatrix * RotationMatrix;
 }
 
+// All animations loaded here
+void LoadAnimations() {
+    // A more position & rotation focused animation
+    AnimationData animation0;
+    animation0.PositionKeyFrames.push_back(PositionKeyFrame(glm::vec3(75.0f, 12.0f, 0.0f), 0.f, EaseIn));
+    animation0.PositionKeyFrames.push_back(PositionKeyFrame(glm::vec3(0.0f, 12.0f, -75.f), 5.f, EaseIn));
+    animation0.PositionKeyFrames.push_back(PositionKeyFrame(glm::vec3(-75.0f, 12.0f, 0.0f), 10.f, EaseInOut));
+    animation0.PositionKeyFrames.push_back(PositionKeyFrame(glm::vec3(0.0f, 12.0f, 75.0f), 15.f, EaseOut));
+    animation0.PositionKeyFrames.push_back(PositionKeyFrame(glm::vec3(75.0f, 12.0f, 0.0f), 20.f, EaseOut));
+    animation0.ScaleKeyFrames.push_back(ScaleKeyFrame(glm::vec3(1), 0.0f, None));
+    animation0.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(1, 0, 0, 0), 0.0f, true, EaseIn));
+    animation0.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(0, 0, -1, 0), 5.0f, true, EaseIn));
+    animation0.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(-1, 0, 0, 0), 10.0f, true, EaseInOut));
+    animation0.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(0, 0, 1, 0), 15.0f, true, EaseOut));
+    animation0.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(1, 0, 0, 0), 20.0f, true, EaseOut));
+    animation0.NullKeyFrames.push_back(NullKeyFrame("\nAnimation0: The zero_null frame was called.\n", 0.f));
+    animation0.Duration = 20.f;
+    AnimeMan.LoadAnimation("Animation0", animation0);
+
+    // A more scale focused animation
+    AnimationData animation1;
+    animation1.PositionKeyFrames.push_back(PositionKeyFrame(glm::vec3(20.0f, 5.0f, 20.0f), 0.f, EaseInOut));
+    animation1.PositionKeyFrames.push_back(PositionKeyFrame(glm::vec3(20.0f, 10.0f, -20.0f), 20.f, EaseInOut));
+    animation1.PositionKeyFrames.push_back(PositionKeyFrame(glm::vec3(20.0f, 5.0f, 20.0f), 40.f, EaseInOut));
+    animation1.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(1, 0, 0, 0), 0.f, true, EaseIn));
+    animation1.ScaleKeyFrames.push_back(ScaleKeyFrame(glm::vec3(1), 0.0f, EaseIn));
+    animation1.ScaleKeyFrames.push_back(ScaleKeyFrame(glm::vec3(2), 5.0f, EaseIn));
+    animation1.ScaleKeyFrames.push_back(ScaleKeyFrame(glm::vec3(3), 10.0f, EaseIn));
+    animation1.ScaleKeyFrames.push_back(ScaleKeyFrame(glm::vec3(4), 15.0f, EaseInOut));
+    animation1.ScaleKeyFrames.push_back(ScaleKeyFrame(glm::vec3(5), 20.0f, EaseInOut));
+    animation1.ScaleKeyFrames.push_back(ScaleKeyFrame(glm::vec3(4), 25.0f, EaseInOut));
+    animation1.ScaleKeyFrames.push_back(ScaleKeyFrame(glm::vec3(3), 30.0f, EaseOut));
+    animation1.ScaleKeyFrames.push_back(ScaleKeyFrame(glm::vec3(2), 35.0f, EaseOut));
+    animation1.ScaleKeyFrames.push_back(ScaleKeyFrame(glm::vec3(1), 40.0f, EaseOut));
+    animation1.NullKeyFrames.push_back(NullKeyFrame("\nAnimation1: The zero_null frame was called.\n", 0.f));
+    animation1.Duration = 40.f;
+    AnimeMan.LoadAnimation("Animation1", animation1);
+
+    // A more rotation focused animation
+    AnimationData animation2;
+    animation2.PositionKeyFrames.push_back(PositionKeyFrame(glm::vec3(-20.0f, 5.0f, 0.0f), 0.f, None));
+    animation2.PositionKeyFrames.push_back(PositionKeyFrame(glm::vec3(-30.0f, 5.0f, 0.0f), 20.f, None));
+    animation2.PositionKeyFrames.push_back(PositionKeyFrame(glm::vec3(-20.0f, 5.0f, 0.0f), 40.f, None));
+    animation2.ScaleKeyFrames.push_back(ScaleKeyFrame(glm::vec3(1), 0.0f, EaseIn));
+    animation2.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(0, 0, 0, 0), 0.f, true, EaseIn));
+    animation2.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(0, 0.01f, 0, 0), 5.f, true, EaseIn));
+    animation2.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(0, 0.02f, 0, 0), 10.f, true, EaseIn));
+    animation2.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(0, 0.03f, 0, 0), 15.f, true, EaseInOut));
+    animation2.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(0, 0.04f, 0, 0), 20.f, true, EaseInOut));
+    animation2.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(0, 0.03f, 0, 0), 25.f, true, EaseInOut));
+    animation2.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(0, 0.02f, 0, 0), 30.f, true, EaseOut));
+    animation2.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(0, 0.01f, 0, 0), 35.f, true, EaseOut));
+    animation2.RotationKeyFrames.push_back(RotationKeyFrame(glm::quat(0, 0, 0, 0), 40.f, true, EaseOut));
+
+    animation2.NullKeyFrames.push_back(NullKeyFrame("\nAnimation2: The zero_null frame was called.\n", 0.f));
+    animation2.Duration = 40.f;
+    AnimeMan.LoadAnimation("Animation2", animation2);
+
+}
 int main(int argc, char** argv) 
 {
     Initialize();
     Render();
     
     while (!glfwWindowShouldClose(window)) {
-        Update();
+        Update(g_elapsedTime);
     }
     
     Shutdown();

@@ -12,7 +12,6 @@ public:
 	~cAnimationManager();
 
 	bool LoadAnimation(const std::string& name, AnimationData animation);
-
 	void Update(const std::vector<cMeshInfo*>& gameObjects, float dt);
 
 private:

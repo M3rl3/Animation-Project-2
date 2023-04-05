@@ -199,10 +199,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\assets\shaders\fragmentShader.glsl" />
-    <None Include="..\assets\shaders\fragmentShader_bones.glsl" />
     <None Include="..\assets\shaders\geometryShader_passthrough.glsl" />
     <None Include="..\assets\shaders\vertexShader.glsl" />
-    <None Include="..\assets\shaders\vertexShader_bones.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
