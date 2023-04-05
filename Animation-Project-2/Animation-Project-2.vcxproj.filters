@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{f0da431e-ecd4-4f10-b238-e06aacadc98f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AI_Path_Finding\PathFinding.h">
@@ -63,13 +66,28 @@
     <ClInclude Include="Draw Mesh\DrawMesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PlyFileLoader\PlyFileLoader.h">
+    <ClInclude Include="cModelFileLoader\cModelFileLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OpenGL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sCamera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cAnimationManager\Animation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cAnimationManager\cAnimationManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cAnimationManager\BoneHierarchy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cModelFileLoader\vertex_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cVAOManager\sModelDrawInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -119,7 +137,7 @@
     <ClCompile Include="Draw Mesh\DrawMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PlyFileLoader\PlyFileLoader.cpp">
+    <ClCompile Include="cModelFileLoader\cModelFileLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="glad.c">
@@ -128,9 +146,29 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="cAnimationManager\cAnimationManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="File Stream\readFile.txt" />
     <Text Include="File Stream\sceneDescription.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\assets\shaders\fragmentShader_bones.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\assets\shaders\geometryShader_passthrough.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\assets\shaders\vertexShader_bones.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\assets\shaders\fragmentShader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\assets\shaders\vertexShader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

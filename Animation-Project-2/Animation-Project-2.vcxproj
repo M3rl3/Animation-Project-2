@@ -149,6 +149,9 @@
   <ItemGroup>
     <ClInclude Include="A-Star Algorithm\A-Star.h" />
     <ClInclude Include="AI_Path_Finding\PathFinding.h" />
+    <ClInclude Include="cAnimationManager\BoneHierarchy.h" />
+    <ClInclude Include="cAnimationManager\Animation.h" />
+    <ClInclude Include="cAnimationManager\cAnimationManager.h" />
     <ClInclude Include="cBasicTextureManager\C24BitBMPpixel.h" />
     <ClInclude Include="cBasicTextureManager\cBasicTextureManager.h" />
     <ClInclude Include="cBasicTextureManager\CTextureFromBMP.h" />
@@ -157,18 +160,21 @@
     <ClInclude Include="cLightManager\cLightHelper.h" />
     <ClInclude Include="cLightManager\cLightManager.h" />
     <ClInclude Include="cMeshInfo\cMeshInfo.h" />
+    <ClInclude Include="cModelFileLoader\vertex_types.h" />
     <ClInclude Include="cShaderManager\cShader.h" />
     <ClInclude Include="cShaderManager\cShaderManager.h" />
     <ClInclude Include="cShaderManager\cShaderProgram.h" />
     <ClInclude Include="cVAOManager\cVAOManager.h" />
+    <ClInclude Include="cVAOManager\sModelDrawInfo.h" />
     <ClInclude Include="Draw Bounding Box\DrawBoundingBox.h" />
     <ClInclude Include="Draw Mesh\DrawMesh.h" />
     <ClInclude Include="OpenGL.h" />
-    <ClInclude Include="PlyFileLoader\PlyFileLoader.h" />
+    <ClInclude Include="cModelFileLoader\cModelFileLoader.h" />
     <ClInclude Include="sCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="A-Star Algorithm\A-Star.cpp" />
+    <ClCompile Include="cAnimationManager\cAnimationManager.cpp" />
     <ClCompile Include="cBasicTextureManager\C24BitBMPpixel.cpp" />
     <ClCompile Include="cBasicTextureManager\cBasicTextureManager.cpp" />
     <ClCompile Include="cBasicTextureManager\CTextureFromBMP.cpp" />
@@ -185,11 +191,18 @@
     <ClCompile Include="Draw Mesh\DrawMesh.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="PlyFileLoader\PlyFileLoader.cpp" />
+    <ClCompile Include="cModelFileLoader\cModelFileLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="File Stream\readFile.txt" />
     <Text Include="File Stream\sceneDescription.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\assets\shaders\fragmentShader.glsl" />
+    <None Include="..\assets\shaders\fragmentShader_bones.glsl" />
+    <None Include="..\assets\shaders\geometryShader_passthrough.glsl" />
+    <None Include="..\assets\shaders\vertexShader.glsl" />
+    <None Include="..\assets\shaders\vertexShader_bones.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -6,6 +6,8 @@
 #include <glm/vec3.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+#include "../cAnimationManager/Animation.h"
+
 #include "../cVAOManager/cVAOManager.h"
 
 class cMeshInfo {
@@ -55,6 +57,21 @@ public:
 	int textureIDs[8];
 	std::string textures[8];
 	float textureRatios[8];
+
+	// Animation
+	Animation animation;
+
+	EasingType currentEasing;
+	EasingType currentEasing1;
+	EasingType currentEasing2;
+
+	bool HasParent;
+	bool HasBones;
+
+	// Character Animation || Ragdoll 
+	std::vector<glm::mat4> BoneModelMatrices;
+	std::vector<glm::mat4> GlobalTransformations;
+	glm::mat4 BoneRotationMatrices[66];
 
 	std::string message;
 

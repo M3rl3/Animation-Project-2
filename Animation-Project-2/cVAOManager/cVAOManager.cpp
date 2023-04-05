@@ -30,7 +30,7 @@ sModelDrawInfo::sModelDrawInfo()
 	glm::vec3 maxValues;
 	glm::vec3 minValues;
 
-//	scale = 5.0/maxExtent;		-> 5x5x5
+	// scale = 5.0/maxExtent;		-> 5x5x5
 	float maxExtent;
 
 	return;
@@ -139,31 +139,59 @@ bool cVAOManager::LoadModelIntoVAO(
 	GLint vColourLocation = glGetAttribLocation(shaderProgramID, "vColour");
 	GLint vNormalLocation = glGetAttribLocation(shaderProgramID, "vNormal");
 	GLint vUV2Location = glGetAttribLocation(shaderProgramID, "vUV2");
+	GLint vTangentLocation = glGetAttribLocation(shaderProgramID, "vTangent");
+	GLint vBiNormalLocation = glGetAttribLocation(shaderProgramID, "vBiNormal");
+	GLint vBoneIDLocation = glGetAttribLocation(shaderProgramID, "vBoneID");
+	GLint vBoneWeightLocation = glGetAttribLocation(shaderProgramID, "vBoneWeight");
 
 	// Set the vertex attributes for this shader
 	glEnableVertexAttribArray(vPositionLocation);	// vPos
-	glVertexAttribPointer(vPositionLocation, 3,			// vPos
+	glVertexAttribPointer(vPositionLocation, 4,			// vPos
 						    GL_FLOAT, GL_FALSE,
-						    sizeof(vertLayout),
+						    sizeof(vertLayout),					// Stride	(number of bytes)
 						    (void*)offsetof(vertLayout, x));
 
 	glEnableVertexAttribArray(vColourLocation);		// vCol
-	glVertexAttribPointer(vColourLocation, 3,			// vCol
+	glVertexAttribPointer(vColourLocation, 4,			// vCol
 						    GL_FLOAT, GL_FALSE,
-						    sizeof(vertLayout),
+						    sizeof(vertLayout),					// Stride	(number of bytes)
 						    (void*)offsetof(vertLayout, r));
 
 	glEnableVertexAttribArray(vNormalLocation);		// vNormal
-	glVertexAttribPointer(vNormalLocation, 3,			// vNormal
+	glVertexAttribPointer(vNormalLocation, 4,			// vNormal
 							GL_FLOAT, GL_FALSE,
-							sizeof(vertLayout),
+							sizeof(vertLayout),					// Stride	(number of bytes)
 							(void*)offsetof(vertLayout, nx));
 
 	glEnableVertexAttribArray(vUV2Location);		// vUV2
 	glVertexAttribPointer(vUV2Location, 4,				// vUV2
 						    GL_FLOAT, GL_FALSE,
 							sizeof(vertLayout),						// Stride	(number of bytes)
-							(void*)offsetof(vertLayout, texture_u));
+							(void*)offsetof(vertLayout, u0));
+
+	glEnableVertexAttribArray(vTangentLocation);		// vTangent
+	glVertexAttribPointer(vTangentLocation, 4,				// vTangent
+							GL_FLOAT, GL_FALSE,
+							sizeof(vertLayout),						// Stride	(number of bytes)
+							(void*)offsetof(vertLayout, tx));
+
+	glEnableVertexAttribArray(vBiNormalLocation);		// vBiNormal
+	glVertexAttribPointer(vBiNormalLocation, 4,				// vBiNormal
+							GL_FLOAT, GL_FALSE,
+							sizeof(vertLayout),						// Stride	(number of bytes)
+							(void*)offsetof(vertLayout, bx));
+
+	glEnableVertexAttribArray(vBoneIDLocation);		// vBoneID
+	glVertexAttribPointer(vBoneIDLocation, 4,				// vBoneID
+							GL_FLOAT, GL_FALSE,
+							sizeof(vertLayout),						// Stride	(number of bytes)
+							(void*)offsetof(vertLayout, vBoneID[0]));
+
+	glEnableVertexAttribArray(vBoneWeightLocation);		// vBiNormal
+	glVertexAttribPointer(vBoneWeightLocation, 4,				// vBiNormal
+							GL_FLOAT, GL_FALSE,
+							sizeof(vertLayout),						// Stride	(number of bytes)
+							(void*)offsetof(vertLayout, vBoneWeight[0]));
 
 	// Now that all the parts are set up, set the VAO to zero
 	glBindVertexArray(0);
@@ -175,7 +203,10 @@ bool cVAOManager::LoadModelIntoVAO(
 	glDisableVertexAttribArray(vColourLocation);
 	glDisableVertexAttribArray(vNormalLocation);
 	glDisableVertexAttribArray(vUV2Location);
-
+	glDisableVertexAttribArray(vTangentLocation);
+	glDisableVertexAttribArray(vBiNormalLocation);
+	glDisableVertexAttribArray(vBoneIDLocation);
+	glDisableVertexAttribArray(vBoneWeightLocation);
 
 	// Store the draw information into the map
 	this->m_map_ModelName_to_VAOID[ drawInfo.meshName ] = drawInfo;

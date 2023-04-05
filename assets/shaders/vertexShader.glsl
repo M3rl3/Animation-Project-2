@@ -35,7 +35,7 @@ void main()
 	
 	gl_Position = MVP * vec4(vertPosition, 1.f);
 
-	gWorldLocation.xyz = (Model * vec4(vPosition)).xyz;
+	gWorldLocation.xyz = (Model * vec4(vertPosition, 1.f)).xyz;
 	gWorldLocation.w = 1.f;
 
 	gNormal.xyz = normalize(ModelInverse * vec4(vNormal.xyz, 1.f)).xyz;

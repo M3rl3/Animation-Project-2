@@ -10,7 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "PlyFileLoader/PlyFileLoader.h"
+#include "cModelFileLoader/cModelFileLoader.h"
 #include "cShaderManager/cShaderManager.h"
 #include "cVAOManager/cVAOManager.h"
 #include "cLightManager/cLightManager.h"
@@ -30,7 +30,7 @@ GLFWwindow* window;
 GLint mvp_location = 0;
 GLuint shaderID = 0;
 
-PlyFileLoader* plyLoader;
+cModelFileLoader* modelLoader;
 cVAOManager* VAOMan;
 cBasicTextureManager* TextureMan;
 cLightManager* LightMan;
@@ -41,6 +41,7 @@ sModelDrawInfo player_obj;
 cMeshInfo* full_screen_quad;
 cMeshInfo* skybox_sphere_mesh;
 cMeshInfo* player_mesh;
+cMeshInfo* boner_mesh;
 
 cMeshInfo* bulb_mesh;
 cLight* pointLight;
@@ -66,6 +67,8 @@ void LoadPlyFilesIntoVAO(void);
 void RenderToFBO(GLFWwindow* window, sCamera* camera, GLuint eyeLocationLocation, 
                  GLuint viewLocation, GLuint projectionLocation,
                  GLuint modelLocaction, GLuint modelInverseLocation);
+glm::mat4 CreateModelMatrix(const glm::mat4& parentModelMatrix,
+    const glm::vec3& translate, const glm::quat& rotate);
 
 const glm::vec3 origin = glm::vec3(0);
 const glm::mat4 matIdentity = glm::mat4(1.0f);
@@ -82,6 +85,7 @@ enum eEditMode
     TAKE_CONTROL
 };
 
+// Camera moved into a different struct
 // glm::vec3 cameraEye = glm::vec3(-280.0, 140.0, -700.0);
 // glm::vec3 cameraTarget = glm::vec3(0.f, 0.f, 0.f);
 
@@ -481,7 +485,7 @@ void Render() {
     ReadFromFile("./File Stream/readFile.txt");
 
     // Load the ply model
-    plyLoader = new PlyFileLoader();
+    modelLoader = new cModelFileLoader();
 
     // VAO Manager
     VAOMan = new cVAOManager();
@@ -645,13 +649,13 @@ void Update() {
 
         // Draw all the meshes pushed onto the vector
         DrawMesh(currentMesh,           // theMesh
-            model,                 // Model Matrix
-            shaderID,              // Compiled Shader ID
-            TextureMan,            // Instance of the Texture Manager
-            VAOMan,                // Instance of the VAO Manager
-            camera,                // Instance of the struct Camera
-            modelLocaction,        // UL for model matrix
-            modelInverseLocation); // UL for transpose of model matrix
+                 model,                 // Model Matrix
+                 shaderID,              // Compiled Shader ID
+                 TextureMan,            // Instance of the Texture Manager
+                 VAOMan,                // Instance of the VAO Manager
+                 camera,                // Instance of the struct Camera
+                 modelLocaction,        // UL for model matrix
+                 modelInverseLocation); // UL for transpose of model matrix
     }
 
     // Draw the skybox
@@ -743,20 +747,6 @@ void ReadFromFile(std::string filePath) {
 
     readFile.close();
 }
-
-struct BMPHeader {
-    unsigned char headerField[2];
-    unsigned char sizeOfBMP[4];
-    unsigned char reserved1[2];
-    unsigned char reserved2[2];
-    unsigned char dataOffset[4];
-};
-
-struct Color {
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-};
 
 // All lights managed here
 void ManageLights() {
@@ -915,48 +905,55 @@ void RenderToFBO(GLFWwindow* window, sCamera* camera,
 void LoadPlyFilesIntoVAO(void)
 {
     sModelDrawInfo bulb;
-    plyLoader->LoadModel(meshFiles[0], bulb);
+    modelLoader->LoadModel(meshFiles[0], bulb);
     if (!VAOMan->LoadModelIntoVAO("bulb", bulb, shaderID)) {
         std::cerr << "Could not load model into VAO" << std::endl;
     }
 
     sModelDrawInfo flat_plain_obj;
-    plyLoader->LoadModel(meshFiles[9], flat_plain_obj);
+    modelLoader->LoadModel(meshFiles[9], flat_plain_obj);
     if (!VAOMan->LoadModelIntoVAO("flat_plain", flat_plain_obj, shaderID)) {
         std::cerr << "Could not load model into VAO" << std::endl;
     }
 
     sModelDrawInfo wall_cube;
-    plyLoader->LoadModel(meshFiles[2], wall_cube);
+    modelLoader->LoadModel(meshFiles[2], wall_cube);
     if (!VAOMan->LoadModelIntoVAO("wall_cube", wall_cube, shaderID)) {
         std::cerr << "Could not load model into VAO" << std::endl;
     }
     
     sModelDrawInfo pyramid;
-    plyLoader->LoadModel(meshFiles[11], pyramid);
+    modelLoader->LoadModel(meshFiles[11], pyramid);
     if (!VAOMan->LoadModelIntoVAO("pyramid", pyramid, shaderID)) {
         std::cerr << "Could not load model into VAO" << std::endl;
     }
 
     sModelDrawInfo steve;
-    plyLoader->LoadModel(meshFiles[8], steve);
+    modelLoader->LoadModel(meshFiles[8], steve);
     if (!VAOMan->LoadModelIntoVAO("steve", steve, shaderID)) {
         std::cerr << "Could not load model into VAO" << std::endl;
     }
     
     // 2-sided full screen quad aligned to x-y axis
     sModelDrawInfo fullScreenQuad;
-    plyLoader->LoadModel(meshFiles[10], fullScreenQuad);
+    modelLoader->LoadModel(meshFiles[10], fullScreenQuad);
     if (!VAOMan->LoadModelIntoVAO("fullScreenQuad", fullScreenQuad, shaderID)) {
         std::cerr << "Could not load model into VAO" << std::endl;
     }
 
     // skybox sphere with inverted normals
     sModelDrawInfo skybox_sphere_obj;
-    plyLoader->LoadModel(meshFiles[6], skybox_sphere_obj);
+    modelLoader->LoadModel(meshFiles[6], skybox_sphere_obj);
     if (!VAOMan->LoadModelIntoVAO("skybox_sphere", skybox_sphere_obj, shaderID)) {
         std::cerr << "Could not load model into VAO" << std::endl;
     }
+}
+
+glm::mat4 CreateModelMatrix(const glm::mat4& parentModelMatrix, const glm::vec3& translate, const glm::quat& rotate)
+{
+    glm::mat4 TranslationMatrix = glm::translate(glm::mat4(1.f), translate);
+    glm::mat4 RotationMatrix = glm::mat4_cast(rotate);
+    return parentModelMatrix * TranslationMatrix * RotationMatrix;
 }
 
 int main(int argc, char** argv) 
