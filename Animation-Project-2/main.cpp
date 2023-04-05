@@ -469,7 +469,7 @@ void Initialize() {
 
     // Init camera object
     // camera->position = glm::vec3(-530, 2500.0, -675.0);
-    camera->position = glm::vec3(-280.0, 140.0, -700.0);
+    camera->position = glm::vec3(-200.0, 120.0, -200.0);
     camera->target = glm::vec3(0.f, 0.f, 1.f);
 
     // Init imgui for crosshair
